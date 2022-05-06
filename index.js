@@ -3,55 +3,122 @@ const { user } = require("./user");
 const app = express();
 const jwt = require("jsonwebtoken");
 app.use(express.json());
-const port = 3004;
+const cors = require("cors");
+const corsOptions = {
+  origin: "http://localhost:3000",
+  credentials: true,
+  optionSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+const port = 3009;
+app.listen(port, () => {
+  console.log("hai", `${port}`);
+});
 
 app.get("/", (req, res) => {
   res.send("Hello World", `${port}`);
 });
 
+//signup
 app.post("/signup", (req, res) => {
-  const { username, password, email } = req.body;
-  console.log("signup", user);
-  let check = user.find((el) => el.username === username);
-  if (check) {
-    res.status(401).json({
-      status: "error",
-      message: "email already exist",
-    });
-  }
-
-  user.push({ username, password, email });
-
-  const token = jwt.sign({ email }, "asdfghjkl");
-
-  console.log(user);
-  res.status(200).json({
-    status: "success",
-    token,
-  });
-});
-
-app.post("/login", (req, res) => {
   const { password, email } = req.body;
-  console.log("login", user);
-  let check = user.find((el) => el.email === email);
-  if (check) {
-    res.status(401).json({
-      status: "error",
-      message: "email already exist",
+  console.log(req);
+  let data = user.find((el) => el.email === email);
+  console.log("database user available", user);
+  if (data) {
+    res.status(400).json({
+      status: "failed",
+      errors: [{ msg: "Email Already Exists" }],
     });
   }
-
-  user.push({ password, email });
-
-  const token = jwt.sign({ email }, "asdfghjkl");
-  const refreshtoken = jwt.sign({ email }, "");
-  console.log(user);
+  user.push({
+    email,
+    password,
+  });
+  const token = jwt.sign({ email }, "kjsdksdlkslds12ksjdksd", {
+    expiresIn: "1m",
+  });
+  console.log("signup token", token);
   res.status(200).json({
     status: "success",
-    token,
+    token: token,
+  });
+  console.log(user);
+});
+
+//login
+app.post("/login", (req, res) => {
+  const { email, passsword } = req.body;
+  const data = user.find((el) => el.email === email);
+  console.log("login available data", data);
+  if (!data) {
+    res.status(401).json({
+      status: "failed",
+      error: { msg: "no data found" },
+    });
+  }
+  const token = jwt.sign({ email }, "kjsdksdlkslds12ksjdksd", {
+    expiresIn: "1m",
+  });
+  const refreshToken = jwt.sign({ email }, "kjsdksdlkslds12ksjdksd", {
+    expiresIn: "1h",
+  });
+  console.log("login token", token);
+  res.status(200).json({
+    status: "success",
+    message: {
+      token,
+      refreshToken,
+    },
   });
 });
-app.listen(port, () => {
-  console.log("hai", `${port}`);
+
+//refresh Token Handler
+app.post("/refresh", (req, res) => {
+  let refreshToken = req.body["x-access-token"];
+  // let refreshToken=req.body.refreshToken
+  let decode = jwt.decode(refreshToken);
+  console.log("haidecode", decode);
+  console.log("hai mail", decode.email);
+  let currentEmail = decode.email;
+  // let Email = user.find((el) => el.email === decode.email);
+  // console.log("emails====>", Email);
+  console.log(currentEmail);
+  if (currentEmail) {
+    const token = jwt.sign({ currentEmail }, "kjsdksdlkslds12ksjdksd", {
+      expiresIn: "1m",
+    });
+    return res.status(200).json({
+      status: "success",
+      data: {
+        token,
+        refreshToken,
+      },
+    });
+  }
 });
+
+exports.checkAuth = (req, res, next) => {
+  const { TokenExpiredError } = jwt;
+  const catchError = (err, res) => {
+    if (err instanceof TokenExpiredError) {
+      return res
+        .status(401)
+        .send({ message: "Unauthorized! Access Token was expired!" });
+    }
+    return res.sendStatus(401).send({ message: "Unauthorized!" });
+  };
+  const token = req.headers["x-access-token"];
+  console.log("tokens", token);
+  if (!token) {
+    res.status(400).json({
+      errors: [{ msg: "No Token Found" }],
+    });
+  }
+  jwt.verify(token, "kjsdksdlkslds12ksjdksd", (err, decoded) => {
+    if (err) {
+      return catchError(err, res);
+    }
+    next();
+  });
+};
