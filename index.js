@@ -1,9 +1,10 @@
 const express = require("express");
-const { user } = require("./user");
+const { user, tours } = require("./user");
 const app = express();
 const jwt = require("jsonwebtoken");
 app.use(express.json());
 const cors = require("cors");
+
 const corsOptions = {
   origin: "http://localhost:3000",
   credentials: true,
@@ -17,6 +18,44 @@ app.listen(port, () => {
 
 app.get("/", (req, res) => {
   res.send("Hello World", `${port}`);
+});
+
+//checkauth get call
+const checkAuth = (req, res, next) => {
+  console.log("samplesss");
+  const { TokenExpiredError } = jwt;
+  const catchError = (err, res) => {
+    if (err instanceof TokenExpiredError) {
+      return res
+        .status(401)
+        .send({ message: "Unauthorized! Access Token was expired!" });
+    }
+    return res.sendStatus(401).send({ message: "Unauthorized!" });
+  };
+  const token = req.headers["x-access-token"];
+  console.log("tokens", token);
+  if (!token) {
+    res.status(400).json({
+      errors: [{ msg: "No Token Found" }],
+    });
+  }
+  jwt.verify(token, "kjsdksdlkslds12ksjdksd", (err, decoded) => {
+    if (err) {
+      return catchError(err, res);
+    }
+    next();
+  });
+};
+
+//Home page get api
+app.get("/home", checkAuth, (req, res) => {
+  console.log("sample");
+  res.status(200).json({
+    status: "success",
+    data: {
+      tours,
+    },
+  });
 });
 
 //signup
@@ -48,7 +87,8 @@ app.post("/signup", (req, res) => {
 
 //login
 app.post("/login", (req, res) => {
-  const { email, passsword } = req.body;
+  const { email, password } = req.body;
+  console.log(req);
   const data = user.find((el) => el.email === email);
   console.log("login available data", data);
   if (!data) {
@@ -97,28 +137,3 @@ app.post("/refresh", (req, res) => {
     });
   }
 });
-
-exports.checkAuth = (req, res, next) => {
-  const { TokenExpiredError } = jwt;
-  const catchError = (err, res) => {
-    if (err instanceof TokenExpiredError) {
-      return res
-        .status(401)
-        .send({ message: "Unauthorized! Access Token was expired!" });
-    }
-    return res.sendStatus(401).send({ message: "Unauthorized!" });
-  };
-  const token = req.headers["x-access-token"];
-  console.log("tokens", token);
-  if (!token) {
-    res.status(400).json({
-      errors: [{ msg: "No Token Found" }],
-    });
-  }
-  jwt.verify(token, "kjsdksdlkslds12ksjdksd", (err, decoded) => {
-    if (err) {
-      return catchError(err, res);
-    }
-    next();
-  });
-};
