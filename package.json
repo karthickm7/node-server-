@@ -2,10 +2,10 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
-    "start": "nodemon index.js",
-    "test":"mocha Mocha.test.js"
+    "start": "nodemon index.ts",
+    "test": "mocha Mocha.test.tsx"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +18,9 @@
     "jsonwebtoken": "^8.5.1",
     "mocha": "^10.0.0",
     "nodemon": "^2.0.16",
-    "sonarqube-scanner": "^2.8.1"
+    "sonarqube-scanner": "^2.8.1",
+    "source-map-loader": "^3.0.1",
+    "ts-loader": "^9.3.0",
+    "typescript": "^4.7.3"
   }
 }

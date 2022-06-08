@@ -1,5 +1,5 @@
 const express = require("express");
-const { user, tours } = require("./user");
+const { user, userData } = require("./user");
 const app = express();
 const jwt = require("jsonwebtoken");
 app.use(express.json());
@@ -10,14 +10,16 @@ const corsOptions = {
   credentials: true,
   optionSuccessStatus: 200,
 };
+
 app.use(cors(corsOptions));
-const port = 3009;
+const port = 3016;
 app.listen(port, () => {
   console.log("hai", `${port}`);
 });
 
+//send request
 app.get("/", (req, res) => {
-  res.send("Hello World", `${port}`);
+  res.send("Hello World");
 });
 
 //checkauth get call
@@ -25,6 +27,7 @@ const checkAuth = (req, res, next) => {
   console.log("samplesss");
   const { TokenExpiredError } = jwt;
   const catchError = (err, res) => {
+    console.log("error")
     if (err instanceof TokenExpiredError) {
       return res
         .status(401)
@@ -53,14 +56,16 @@ app.get("/home", checkAuth, (req, res) => {
   res.status(200).json({
     status: "success",
     data: {
-      tours,
+      user,
     },
   });
 });
 
+
+
 //signup
-app.post("/signup", (req, res) => {
-  const { password, email } = req.body;
+app.post("/signup", (req:any, res:any) => {
+  const { name, password, email } = req.body;
   console.log(req);
   let data = user.find((el) => el.email === email);
   console.log("database user available", user);
@@ -71,6 +76,7 @@ app.post("/signup", (req, res) => {
     });
   }
   user.push({
+    name,
     email,
     password,
   });
@@ -82,11 +88,11 @@ app.post("/signup", (req, res) => {
     status: "success",
     token: token,
   });
-  console.log(user);
+  console.log("ud",user);
 });
 
 //login
-app.post("/login", (req, res) => {
+app.post("/login", (req:any, res:any) => {
   const { email, password } = req.body;
   console.log(req);
   const data = user.find((el) => el.email === email);
@@ -115,14 +121,13 @@ app.post("/login", (req, res) => {
 
 //refresh Token Handler
 app.post("/refresh", (req, res) => {
-  let refreshToken = req.body["x-access-token"];
-  // let refreshToken=req.body.refreshToken
+  let refreshToken = req.headers["x-access-token"];
+ // let refreshToken=req.body.refreshToken
   let decode = jwt.decode(refreshToken);
   console.log("haidecode", decode);
   console.log("hai mail", decode.email);
   let currentEmail = decode.email;
-  // let Email = user.find((el) => el.email === decode.email);
-  // console.log("emails====>", Email);
+  
   console.log(currentEmail);
   if (currentEmail) {
     const token = jwt.sign({ currentEmail }, "kjsdksdlkslds12ksjdksd", {
