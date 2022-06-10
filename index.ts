@@ -1,12 +1,15 @@
+import { use } from "chai";
+import { del } from "express/lib/application";
+
 const express = require("express");
-const { user, userData } = require("./user");
+let { user, tours } = require("./user");
 const app = express();
 const jwt = require("jsonwebtoken");
 app.use(express.json());
 const cors = require("cors");
 
 const corsOptions = {
-  origin: "http://localhost:3001",
+  origin: "http://localhost:3000",
   credentials: true,
   optionSuccessStatus: 200,
 };
@@ -23,11 +26,11 @@ app.get("/", (req, res) => {
 });
 
 //checkauth get call
-const checkAuth = (req, res, next) => {
-  console.log("samplesss");
+const checkAuth = (req: any, res: any, next) => {
+  console.log(req.headers, "samplesss");
   const { TokenExpiredError } = jwt;
   const catchError = (err, res) => {
-    console.log("error")
+    console.log("error");
     if (err instanceof TokenExpiredError) {
       return res
         .status(401)
@@ -36,13 +39,13 @@ const checkAuth = (req, res, next) => {
     return res.sendStatus(401).send({ message: "Unauthorized!" });
   };
   const token = req.headers["x-access-token"];
-  console.log("tokens", token);
+  console.log("checkauthtokens", token);
   if (!token) {
     res.status(400).json({
       errors: [{ msg: "No Token Found" }],
     });
   }
-  jwt.verify(token, "kjsdksdlkslds12ksjdksd", (err, decoded) => {
+  jwt.verify(token, "kjsdksdlkslds12ksjdksd", (err: any, decoded: any) => {
     if (err) {
       return catchError(err, res);
     }
@@ -51,23 +54,79 @@ const checkAuth = (req, res, next) => {
 };
 
 //Home page get api
-app.get("/home", checkAuth, (req, res) => {
-  console.log("sample");
+app.get("/home", checkAuth, (req: any, res: any) => {
+  //console.log("sample",res);
+  console.log(user, "samplereq");
   res.status(200).json({
     status: "success",
-    data: {
-      user,
-    },
+    data: user,
   });
 });
 
+//Delete data
+app.delete("/Deleteuser/:id", checkAuth, (req: any, res:any) => {
+  let delid = req.params.id;
+  console.log(delid, "delreq");
+  let deleteddata = user.filter((user: any) => {
+    user.id === delid;
+  });
+  let datas = user.filter((user: any) =>user.id!==delid);
+  user=datas
+  console.log(datas, "currentuser");
+  if (deleteddata) {
+    res.status(200).send({ message: "student deleted" });
+  } else {
+    res.status(404).send("User not found");
+  }
+});
 
+//get edit user
 
+app.get("/getuser/:id",(req:any,res:any)=>{
+  let getid = req.params.id;
+  let newUser=user.find((value:any)=>value.id===getid)
+  console.log("getid",getid)
+  console.log(newUser,"newuser")
+  if(newUser){
+    res.status(200).json({
+      status: "success",
+      data: newUser,
+    });
+  }
+  else{
+    res.status(404).send("editeduser not found")
+  }
+
+})
+
+//edit data
+app.put("/Edituser/:id",checkAuth,(req:any,res:any)=>{
+  let editid = req.params.id;
+  console.log(editid,"editid")
+  const data= req.body
+  console.log(data,"edited data")
+ 
+  let editeduser = user.find((users:any)=>{
+    console.log(users,"userss")
+          users.id === editid
+  })
+  console.log(editeduser,"editeduser")
+  if(editeduser){
+    editeduser.id = data.id,
+    editeduser.email= data.email,
+    editeduser.name = data.name,
+    res.status(200).send(user)
+  }
+  else{
+    return res.status(403).send("user not found")
+  }
+
+})
 //signup
-app.post("/signup", (req:any, res:any) => {
-  const { name, password, email } = req.body;
+app.post("/signup", (req: any, res: any) => {
+  const { id, name, password, email } = req.body;
   console.log(req);
-  let data = user.find((el) => el.email === email);
+  let data = user.find((el: { email: any }) => el.email === email);
   console.log("database user available", user);
   if (data) {
     res.status(400).json({
@@ -76,23 +135,24 @@ app.post("/signup", (req:any, res:any) => {
     });
   }
   user.push({
+    id,
     name,
     email,
     password,
   });
   const token = jwt.sign({ email }, "kjsdksdlkslds12ksjdksd", {
-    expiresIn: "1m",
+    expiresIn: "15m",
   });
   console.log("signup token", token);
   res.status(200).json({
     status: "success",
     token: token,
   });
-  console.log("ud",user);
+  console.log("ud", user);
 });
 
 //login
-app.post("/login", (req:any, res:any) => {
+app.post("/login", (req: any, res: any) => {
   const { email, password } = req.body;
   console.log(req);
   const data = user.find((el) => el.email === email);
@@ -104,7 +164,7 @@ app.post("/login", (req:any, res:any) => {
     });
   }
   const token = jwt.sign({ email }, "kjsdksdlkslds12ksjdksd", {
-    expiresIn: "1m",
+    expiresIn: "15m",
   });
   const refreshToken = jwt.sign({ email }, "kjsdksdlkslds12ksjdksd", {
     expiresIn: "1h",
@@ -121,17 +181,17 @@ app.post("/login", (req:any, res:any) => {
 
 //refresh Token Handler
 app.post("/refresh", (req, res) => {
-  let refreshToken = req.headers["x-access-token"];
- // let refreshToken=req.body.refreshToken
+  let refreshToken = req.body["x-access-token"];
+  // let refreshToken=req.body.refreshToken
   let decode = jwt.decode(refreshToken);
   console.log("haidecode", decode);
   console.log("hai mail", decode.email);
   let currentEmail = decode.email;
-  
+
   console.log(currentEmail);
   if (currentEmail) {
     const token = jwt.sign({ currentEmail }, "kjsdksdlkslds12ksjdksd", {
-      expiresIn: "1m",
+      expiresIn: "15m",
     });
     return res.status(200).json({
       status: "success",
