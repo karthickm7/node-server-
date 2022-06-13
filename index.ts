@@ -55,8 +55,6 @@ const checkAuth = (req: any, res: any, next) => {
 
 //Home page get api
 app.get("/home", checkAuth, (req: any, res: any) => {
-  //console.log("sample",res);
-  console.log(user, "samplereq");
   res.status(200).json({
     status: "success",
     data: user,
@@ -66,7 +64,6 @@ app.get("/home", checkAuth, (req: any, res: any) => {
 //Delete data
 app.delete("/Deleteuser/:id", checkAuth, (req: any, res:any) => {
   let delid = req.params.id;
-  console.log(delid, "delreq");
   let deleteddata = user.filter((user: any) => {
     user.id === delid;
   });
@@ -106,10 +103,10 @@ app.put("/Edituser/:id",checkAuth,(req:any,res:any)=>{
   const data= req.body
   console.log(data,"edited data")
  
-  let editeduser = user.find((users:any)=>{
-    console.log(users,"userss")
+  let editeduser = user.find((users:any)=>(
+    // console.log(users,"userss")
           users.id === editid
-  })
+  ))
   console.log(editeduser,"editeduser")
   if(editeduser){
     editeduser.id = data.id,
@@ -180,7 +177,7 @@ app.post("/login", (req: any, res: any) => {
 });
 
 //refresh Token Handler
-app.post("/refresh", (req, res) => {
+app.post("/refresh", (req:any, res:any) => {
   let refreshToken = req.body["x-access-token"];
   // let refreshToken=req.body.refreshToken
   let decode = jwt.decode(refreshToken);
