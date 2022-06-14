@@ -138,7 +138,7 @@ app.post("/signup", (req: any, res: any) => {
     password,
   });
   const token = jwt.sign({ email }, "kjsdksdlkslds12ksjdksd", {
-    expiresIn: "15m",
+    expiresIn: "30s",
   });
   console.log("signup token", token);
   res.status(200).json({
@@ -161,7 +161,7 @@ app.post("/login", (req: any, res: any) => {
     });
   }
   const token = jwt.sign({ email }, "kjsdksdlkslds12ksjdksd", {
-    expiresIn: "15m",
+    expiresIn: "30s",
   });
   const refreshToken = jwt.sign({ email }, "kjsdksdlkslds12ksjdksd", {
     expiresIn: "1h",
@@ -188,7 +188,7 @@ app.post("/refresh", (req:any, res:any) => {
   console.log(currentEmail);
   if (currentEmail) {
     const token = jwt.sign({ currentEmail }, "kjsdksdlkslds12ksjdksd", {
-      expiresIn: "15m",
+      expiresIn: "30s",
     });
     return res.status(200).json({
       status: "success",
