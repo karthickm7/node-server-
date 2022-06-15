@@ -151,7 +151,7 @@ app.post("/signup", (req: any, res: any) => {
 //login
 app.post("/login", (req: any, res: any) => {
   const { email, password } = req.body;
-  console.log(req);
+  console.log(req.body,"reqbody");
   const data = user.find((el) => el.email === email);
   console.log("login available data", data);
   if (!data) {
